@@ -50,6 +50,20 @@ Parameters:
       - "true"
       - "false"
     Default: "false"
+  CreateEcrDockerEndpoint:
+    Type: String
+    Description: Whether to create ECR Docker endpoint
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "false"
+  CreateEcrApiEndpoint:
+    Type: String
+    Description: Whether to create ECR API endpoint
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "false"
 Conditions:
   HasNATGateway: !Not
     - !Equals
@@ -58,6 +72,27 @@ Conditions:
   HasEacnAZNatGateway: !Equals
     - !Ref CreateNATGateway
     - "EachAZ"
+  HasEc2MessagesEndpoint: !Equals
+    - !Ref CreateEc2MessagesEndpoint
+    - "true"
+  HasSsmEndpoint: !Equals
+    - !Ref CreateSsmEndpoint
+    - "true"
+  HasSsmMessagesEndpoint: !Equals
+    - !Ref CreateSsmMessagesEndpoint
+    - "true"
+  HasKmsEndpoint: !Equals
+    - !Ref CreateKmsEndpoint
+    - "true"
+  HasCloudWatchLogsEndpoint: !Equals
+    - !Ref CreateCloudWatchLogsEndpoint
+    - "true"
+  HasEcrDockerEndpoint: !Equals
+    - !Ref CreateEcrDockerEndpoint
+    - "true"
+  HasEcrApiEndpoint: !Equals
+    - !Ref CreateEcrApiEndpoint
+    - "true"
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -74,6 +109,8 @@ Metadata:
           - CreateSsmMessagesEndpoint
           - CreateKmsEndpoint
           - CreateCloudWatchLogsEndpoint
+          - CreateEcrDockerEndpoint
+          - CreateEcrApiEndpoint
 Resources:
   # VPC definition
   Vpc:
@@ -653,6 +690,24 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+  VpcEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} VPC endpoints"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref VpcCidr
+          Description: HTTPS from VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-VpcEndpointSecurityGroup"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
   # VPC endpoints definition
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -674,4 +729,101 @@ Resources:
         - !Ref PrivateSubnet2RouteTable
         - !Ref PrivateSubnet3RouteTable
       VpcEndpointType: Gateway
-  # stub
+  Ec2MessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: HasEc2MessagesEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
+      VpcId: !Ref Vpc
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      VpcEndpointType: Interface
+  SsmEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: HasSsmEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
+      VpcId: !Ref Vpc
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      VpcEndpointType: Interface
+  SsmMessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: HasSsmMessagesEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssmmessages"
+      VpcId: !Ref Vpc
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      VpcEndpointType: Interface
+  KmsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: HasKmsEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.kms"
+      VpcId: !Ref Vpc
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      VpcEndpointType: Interface
+  CloudWatchLogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: HasCloudWatchLogsEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
+      VpcId: !Ref Vpc
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      VpcEndpointType: Interface
+  EcrDockerEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: HasEcrDockerEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.dkr"
+      VpcId: !Ref Vpc
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      VpcEndpointType: Interface
+  EcrApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: HasEcrApiEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.api"
+      VpcId: !Ref Vpc
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      VpcEndpointType: Interface
