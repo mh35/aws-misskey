@@ -1,5 +1,6 @@
 on:
   workflow_dispatch: {}
+name: VPC deploy
 jobs:
   deploy:
     runs-on: ubuntu-latest

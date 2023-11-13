@@ -609,14 +609,6 @@ Resources:
             - RegionMap
             - !Ref AWS::Region
             - CloudFrontPrefix
-          FromPort: 80
-          ToPort: 80
-          Description: CloudFront HTTP
-        - IpProtocol: tcp
-          SourcePrefixListId: !FindInMap
-            - RegionMap
-            - !Ref AWS::Region
-            - CloudFrontPrefix
           FromPort: 443
           ToPort: 443
           Description: Anywhere HTTPS
