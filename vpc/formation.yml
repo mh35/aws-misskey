@@ -64,6 +64,42 @@ Parameters:
       - "true"
       - "false"
     Default: "false"
+Mappings:
+  RegionMap:
+    us-east-1:
+      CloudFrontPrefix: pl-3b927c52
+    us-east-2:
+      CloudFrontPrefix: pl-b6a144df
+    us-west-1:
+      CloudFrontPrefix: pl-4ea04527
+    us-west-2:
+      CloudFrontPrefix: pl-82a045eb
+    ap-northeast-1:
+      CloudFrontPrefix: pl-58a04531
+    ap-northeast-2:
+      CloudFrontPrefix: pl-22a6434b
+    ap-northeast-3:
+      CloudFrontPrefix: pl-31a14458
+    ap-southeast-1:
+      CloudFrontPrefix: pl-31a34658
+    ap-southeast-2:
+      CloudFrontPrefix: pl-b8a742d1
+    ap-south-1:
+      CloudFrontPrefix: pl-9aa247f3
+    ca-central-1:
+      CloudFrontPrefix: pl-38a64351
+    eu-west-1:
+      CloudFrontPrefix: pl-4fa04526
+    eu-west-2:
+      CloudFrontPrefix: pl-93a247fa
+    eu-west-3:
+      CloudFrontPrefix: pl-75b1541c
+    eu-central-1:
+      CloudFrontPrefix: pl-a3a144ca
+    eu-north-1:
+      CloudFrontPrefix: pl-fab65393
+    sa-east-1:
+      CloudFrontPrefix: pl-5da64334
 Conditions:
   HasNATGateway: !Not
     - !Equals
@@ -569,25 +605,21 @@ Resources:
       VpcId: !Ref Vpc
       SecurityGroupIngress:
         - IpProtocol: tcp
-          CidrIp: 0.0.0.0/0
+          SourcePrefixListId: !FindInMap
+            - RegionMap
+            - !Ref AWS::Region
+            - CloudFrontPrefix
           FromPort: 80
           ToPort: 80
-          Description: Anywhere HTTP IPv4
+          Description: CloudFront HTTP
         - IpProtocol: tcp
-          CidrIpv6: '::/0'
-          FromPort: 80
-          ToPort: 80
-          Description: Anywhere HTTP IPv6
-        - IpProtocol: tcp
-          CidrIp: 0.0.0.0/0
+          SourcePrefixListId: !FindInMap
+            - RegionMap
+            - !Ref AWS::Region
+            - CloudFrontPrefix
           FromPort: 443
           ToPort: 443
-          Description: Anywhere HTTPS IPv4
-        - IpProtocol: tcp
-          CidrIpv6: '::/0'
-          FromPort: 443
-          ToPort: 443
-          Description: Anywhere HTTPS IPv6
+          Description: Anywhere HTTPS
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-LoadBalancerSecurityGroup"
