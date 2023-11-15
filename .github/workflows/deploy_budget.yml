@@ -1,0 +1,33 @@
+on:
+  workflow_dispatch: {}
+name: Budget deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: budget
+    name: Deploy budget
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v4
+      - id: login
+        name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ vars.REGION_NAME }}
+      - id: deploy
+        name: Deploy stack
+        run: >-
+          aws cloudformation deploy --template-file
+          budget/formation.yml --stack-name ${{ secrets.STACK_NAME }}
+          --role-arn ${{ secrets.CLOUDFORMATION_ROLE }}
+          --no-fail-on-empty-changeset
+          --tags Name=${{ secrets.STACK_NAME }}
+          CostTag=${{ secrets.STACK_NAME }}
+          AppManagerCFNStackKey=${{ secrets.STACK_NAME }}
+          --parameter-overrides
+          AlarmTargetEmail=${{ secrets.TARGET_EMAIL }}
