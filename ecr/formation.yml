@@ -13,7 +13,9 @@ Resources:
                 "rulePriority": 1,
                 "description": "Delete untagged images",
                 "selection": {
-                  "tagStatus": "untagged"
+                  "tagStatus": "untagged",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 1
                 },
                 "action": {
                   "type": "expire"
