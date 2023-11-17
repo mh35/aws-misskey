@@ -19,6 +19,25 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+  DefaultConfigSet:
+    Type: AWS::SES::ConfigurationSet
+    Properties:
+      ReputationOptions:
+        ReputationMetricsEnabled: true
+      SendingOptions:
+        SendingEnabled: true
+  DefaultConfigSetEventDest:
+    Type: AWS::SES::ConfigurationSetEventDestination
+    Properties:
+      ConfigurationSetName: !Ref DefaultConfigSet
+      EventDestination:
+        Enabled: true
+        MatchingEventTypes:
+          - reject
+          - bounce
+          - complaint
+        SnsDestination:
+          TopicARN: !Ref Topic
   Identity:
     Type: AWS::SES::EmailIdentity
     Properties:
@@ -29,6 +48,8 @@ Resources:
         NextSigningKeyLength: RSA_2048_BIT
       FeedbackAttributes:
         EmailForwardingEnabled: true
+      ConfigurationSetAttributes:
+        ConfigurationSetName: !Ref DefaultConfigSet
   DkimRecords:
     Type: AWS::Route53::RecordSetGroup
     Properties:
