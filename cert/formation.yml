@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ACM public certificate
+Parameters:
+  TargetDomain:
+    Type: String
+    Description: Target domain name
+  ZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route 53 zone ID
+Resources:
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref TargetDomain
+      SubjectAlternativeNames:
+        - !Sub "*.${TargetDomain}"
+      CertificateTransparencyLoggingPreference: ENABLED
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref TargetDomain
+          HostedZoneId: !Ref ZoneId
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Certificate"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
