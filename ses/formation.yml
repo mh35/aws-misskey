@@ -46,8 +46,6 @@ Resources:
         SigningEnabled: true
       DkimSigningAttributes:
         NextSigningKeyLength: RSA_2048_BIT
-      FeedbackAttributes:
-        EmailForwardingEnabled: true
       ConfigurationSetAttributes:
         ConfigurationSetName: !Ref DefaultConfigSet
   DkimRecords:
