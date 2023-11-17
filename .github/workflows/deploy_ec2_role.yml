@@ -1,0 +1,32 @@
+on:
+  workflow_dispatch: {}
+name: EC2 role deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ec2_role
+    name: Deploy EC2 role
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v4
+      - id: login
+        name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ vars.REGION_NAME }}
+      - id: deploy
+        name: Deploy stack
+        run: >-
+          aws cloudformation deploy --template-file
+          ec2_role/formation.yml --stack-name ${{ secrets.STACK_NAME }}
+          --role-arn ${{ secrets.CLOUDFORMATION_ROLE }}
+          --capabilities CAPABILITY_IAM
+          --no-fail-on-empty-changeset
+          --tags Name=${{ secrets.STACK_NAME }}
+          CostTag=${{ secrets.STACK_NAME }}
+          AppManagerCFNStackKey=${{ secrets.STACK_NAME }}
