@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Amazon SES
+Parameters:
+  DomainName:
+    Type: String
+    Description: Domain name
+  ZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route 53 zone ID
+Resources:
+  Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub "${AWS::StackName}-Topic"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Topic"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Identity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Ref DomainName
+      DkimAttributes:
+        SigningEnabled: true
+      DkimSigningAttributes:
+        NextSigningKeyLength: RSA_2048_BIT
+      FeedbackAttributes:
+        EmailForwardingEnabled: true
+  DkimRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      Comment: !Sub "${AWS::StackName} DKIM records"
+      HostedZoneId: !Ref ZoneId
+      RecordSets:
+        - Name: !GetAtt Identity.DkimDNSTokenName1
+          Type: CNAME
+          TTL: "900"
+          ResourceRecords:
+            - !GetAtt Identity.DkimDNSTokenValue1
+        - Name: !GetAtt Identity.DkimDNSTokenName2
+          Type: CNAME
+          TTL: "900"
+          ResourceRecords:
+            - !GetAtt Identity.DkimDNSTokenValue2
+        - Name: !GetAtt Identity.DkimDNSTokenName3
+          Type: CNAME
+          TTL: "900"
+          ResourceRecords:
+            - !GetAtt Identity.DkimDNSTokenValue3
