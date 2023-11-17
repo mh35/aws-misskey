@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECR
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Delete untagged images",
+                "selection": {
+                  "tagStatus": "untagged"
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Repository"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
