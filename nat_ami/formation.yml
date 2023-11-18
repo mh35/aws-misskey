@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: NAT instance AMI builder
+Parameters:
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet ID
+  SecurityGroupIds:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: Security group IDs
+  InstanceProfile:
+    Type: String
+    Description: Instance profile name
+Resources:
+  BuildLogBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: RetainExceptOnCreate
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 7
+            Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-BuildLogBucket"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  InfrastructureConfig:
+    Type: AWS::ImageBuilder::InfrastructureConfiguration
+    Properties:
+      Description: !Sub "${AWS::StackName} infrastructure"
+      InstanceProfileName: !Ref InstanceProfile
+      InstanceTypes:
+        - t4g.nano
+      Logging:
+        S3Logs:
+          S3BucketName: !Ref BuildLogBucket
+      Name: !Sub "${AWS::StackName}-InfraConfig"
+      ResourceTags:
+        CostTag: !Ref AWS::StackName
+      SecurityGroupIds: !Ref SecurityGroupIds
+      SubnetId: !Ref SubnetId
+      TerminateInstanceOnFailure: true
+      Tags:
+        Name: !Sub "${AWS::StackName}-InfrastructureConfig"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
+  InstallCloudWatchAgentComponent:
+    Type: AWS::ImageBuilder::Component
+    DeletionPolicy: RetainExceptOnCreate
+    Properties:
+      Name: !Sub "${AWS::StackName}-InstallCloudWatchAgent"
+      Platform: Linux
+      Version: "1.0.0"
+      SupportedOsVersions:
+        - Amazon Linux 2023
+      Description: Install Amazon CloudWatch Agent for Amazon Linux 2023
+      Data: |
+        schemaVersion: 1.0
+        phases:
+          - name: install
+            steps:
+              - name: Install
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - dnf install -y amazon-cloudwatch-agent
+      Tags:
+        Name: !Sub "${AWS::StackName}-InstallCloudWatchAgentComponent"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
