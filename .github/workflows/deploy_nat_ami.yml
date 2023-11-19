@@ -1,0 +1,36 @@
+on:
+  workflow_dispatch: {}
+name: NAT instance AMI deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: nat_ami
+    name: Deploy NAT instance AMI
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v4
+      - id: login
+        name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ vars.REGION_NAME }}
+      - id: deploy
+        name: Deploy stack
+        run: >-
+          aws cloudformation deploy --template-file
+          nat_ami/formation.yml --stack-name 
+          ${{ secrets.STACK_NAME }}
+          --role-arn ${{ secrets.CLOUDFORMATION_ROLE }}
+          --capabilities CAPABILITY_IAM
+          --no-fail-on-empty-changeset
+          --tags Name=${{ secrets.STACK_NAME }}
+          CostTag=${{ secrets.STACK_NAME }}
+          AppManagerCFNStackKey=${{ secrets.STACK_NAME }}
+          --parameter-overrides
+          SubnetId=${{ secrets.SUBNET_ID }}
+          SecurityGroupIds=${{ secrets.SECURITY_GROUP_ID }}
