@@ -142,7 +142,7 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-SetupNat"
       Platform: Linux
-      Version: "1.0.0"
+      Version: "1.0.1"
       Data: |
         schemaVersion: 1.0
         phases:
@@ -153,10 +153,12 @@ Resources:
                 onFailure: Abort
                 inputs:
                   commands:
+                    - yum install iptables-services -y
+                    - systemctl enable iptables
+                    - systemctl start iptables
                     - echo "net.ipv4.ip_forward = 1" | tee -a /etc/sysctl.conf
                     - sysctl -p
-                    - if_name=`ip link show | grep BROADCAST | awk '{print substr($2, 1, length($2)-1)}'`
-                    - iptables -t nat -A POSTROUTING -o $if_name -s 0.0.0.0/0 -j MASQUERADE
+                    - iptables -t nat -A POSTROUTING -o "$(ip -o link show device-number-0 | awk -F': ' '{print $2}')" -s 0.0.0.0/0 -j MASQUERADE
       Tags:
         Name: !Sub "${AWS::StackName}-SetupNatComponent"
         CostTag: !Ref AWS::StackName
