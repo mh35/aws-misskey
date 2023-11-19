@@ -180,6 +180,18 @@ Resources:
         Name: !Sub "${AWS::StackName}-Recipe"
         CostTag: !Ref AWS::StackName
         AppManagerCFNStackKey: !Ref AWS::StackName
+  RecipeLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/imagebuilder/${AWS::StackName}-Recipe"
+      RetentionInDays: 7
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-RecipeLogGroup"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
   DistConfig:
     Type: AWS::ImageBuilder::DistributionConfiguration
     Properties:
