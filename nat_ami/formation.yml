@@ -124,7 +124,7 @@ Resources:
       Data: |
         schemaVersion: 1.0
         phases:
-          - name: install
+          - name: build
             steps:
               - name: Install
                 action: ExecuteBash
@@ -146,7 +146,7 @@ Resources:
       Data: |
         schemaVersion: 1.0
         phases:
-          - name: setup_nat
+          - name: build
             steps:
               - name: SetupNat
                 action: ExecuteBash
