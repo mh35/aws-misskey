@@ -158,7 +158,8 @@ Resources:
                     - systemctl start iptables
                     - echo "net.ipv4.ip_forward = 1" | tee -a /etc/sysctl.conf
                     - sysctl -p
-                    - iptables -t nat -A POSTROUTING -o "$(ip -o link show device-number-0 | awk -F': ' '{print $2}')" -s 0.0.0.0/0 -j MASQUERADE
+                    - if_name=`ip -o link show device-number-0 | awk -F': ' '{print $2}'`
+                    - iptables -t nat -A POSTROUTING -o "$if_name" -s 0.0.0.0/0 -j MASQUERADE
       Tags:
         Name: !Sub "${AWS::StackName}-SetupNatComponent"
         CostTag: !Ref AWS::StackName
