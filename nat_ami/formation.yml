@@ -141,6 +141,8 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub "${AWS::StackName}-SetupNat"
+      Description: Setup NAT
+      ChangeDescription: Command fix
       Platform: Linux
       Version: "1.0.1"
       Data: |
