@@ -180,7 +180,7 @@ Resources:
         - ComponentArn: !Ref SetupNatComponent
       Name: !Sub "${AWS::StackName}-Recipe"
       ParentImage: !Sub "arn:${AWS::Partition}:imagebuilder:${AWS::Region}:aws:image/amazon-linux-2023-arm64/x.x.x"
-      Version: "1.0.1"
+      Version: "1.0.2"
       Tags:
         Name: !Sub "${AWS::StackName}-Recipe"
         CostTag: !Ref AWS::StackName
