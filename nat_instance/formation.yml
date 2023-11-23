@@ -161,16 +161,17 @@ Resources:
         HostnameType: ip-name
       SecurityGroupIds:
         - !Ref NatInstanceSecurityGroup
-      UserData: !Base64 >-
-        #!/bin/bash
-        mem=`free -m | grep Mem | awk '{print $2}'`
-        disk=`df -m / | grep / | awk '{print $2}'`
-        ssize=`perl -e "print (($mem > $disk / 2) ? $disk / 2 : $mem);"`
-        dd if=/dev/zero of=/swapfile bs=1M count=$ssize
-        chmod 600 /swapfile
-        mkswap /swapfile
-        echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
-        swapon -a
+      UserData:
+        Fn::Base64:
+          #!/bin/bash
+          mem=`free -m | grep Mem | awk '{print $2}'`
+          disk=`df -m / | grep / | awk '{print $2}'`
+          ssize=`perl -e "print (($mem > $disk / 2) ? $disk / 2 : $mem);"`
+          dd if=/dev/zero of=/swapfile bs=1M count=$ssize
+          chmod 600 /swapfile
+          mkswap /swapfile
+          echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+          swapon -a
       PropagateTagsToVolumeOnCreation: true
       Tags:
         - Key: Name
