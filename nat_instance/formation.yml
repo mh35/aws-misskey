@@ -1,0 +1,201 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: NAT instance
+Parameters:
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: Image ID
+  InstanceProfile:
+    Type: String
+    Description: Instance profile
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet ID
+  VpcCidr:
+    Type: String
+    Description: VPC CIDR address
+  InstanceType:
+    Type: String
+    Description: Instance type
+    AllowedValues:
+      - t4g.nano
+      - t4g.small
+      - t4g.medium
+      - t4g.large
+      - t4g.xlarge
+      - t4g.2xlarge
+      - m6g.medium
+      - m6g.large
+      - m6g.xlarge
+      - m6g.2xlarge
+      - m6g.4xlarge
+      - m6g.8xlarge
+      - m6g.12xlarge
+      - m6g.16xlarge
+      - m6g.metal
+      - m6gd.medium
+      - m6gd.large
+      - m6gd.xlarge
+      - m6gd.2xlarge
+      - m6gd.4xlarge
+      - m6gd.8xlarge
+      - m6gd.12xlarge
+      - m6gd.16xlarge
+      - m6gd.metal
+      - m7g.medium
+      - m7g.large
+      - m7g.xlarge
+      - m7g.2xlarge
+      - m7g.4xlarge
+      - m7g.8xlarge
+      - m7g.12xlarge
+      - m7g.16xlarge
+      - m7g.metal
+      - m7gd.medium
+      - m7gd.large
+      - m7gd.xlarge
+      - m7gd.2xlarge
+      - m7gd.4xlarge
+      - m7gd.8xlarge
+      - m7gd.12xlarge
+      - m7gd.16xlarge
+      - r6g.medium
+      - r6g.large
+      - r6g.xlarge
+      - r6g.2xlarge
+      - r6g.4xlarge
+      - r6g.8xlarge
+      - r6g.12xlarge
+      - r6g.16xlarge
+      - r6g.metal
+      - r6gd.medium
+      - r6gd.large
+      - r6gd.xlarge
+      - r6gd.2xlarge
+      - r6gd.4xlarge
+      - r6gd.8xlarge
+      - r6gd.12xlarge
+      - r6gd.16xlarge
+      - r6gd.metal
+      - r7g.medium
+      - r7g.large
+      - r7g.xlarge
+      - r7g.2xlarge
+      - r7g.4xlarge
+      - r7g.8xlarge
+      - r7g.12xlarge
+      - r7g.16xlarge
+      - r7g.metal
+      - r7gd.medium
+      - r7gd.large
+      - r7gd.xlarge
+      - r7gd.2xlarge
+      - r7gd.4xlarge
+      - r7gd.8xlarge
+      - r7gd.12xlarge
+      - r7gd.16xlarge
+    Default: t4g.nano
+  RouteTableId1:
+    Type: String
+    Description: Route table ID 1
+  RouteTableId2:
+    Type: String
+    Description: Route table ID 2
+    Default: ''
+  RouteTableId3:
+    Type: String
+    Description: Route table ID 3
+    Default: ''
+Conditions:
+  HasRoute2:
+    Fn::Not:
+      - !Equals
+        - !Ref RouteTableId2
+        - ''
+  HasRoute3:
+    Fn::Not:
+      - !Equals
+        - !Ref RouteTableId3
+        - ''
+Resources:
+  NatInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: NAT security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: NAT HTTP
+          IpProtocol: tcp
+          CidrIp: !Ref VpcCidr
+          FromPort: 80
+          ToPort: 80
+        - Description: NAT HTTPS
+          IpProtocol: tcp
+          CidrIp: !Ref VpcCidr
+          FromPort: 443
+          ToPort: 443
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-NatInstanceSecurityGroup"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !Ref SubnetId
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            DeleteOnTermination: true
+            VolumeSize: 8
+            VolumeType: gp2
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: true
+        HostnameType: ip-name
+      SecurityGroupIds:
+        - !Ref NatInstanceSecurityGroup
+      UserData: !Base64 >-
+        #!/bin/bash
+        mem=`free -m | grep Mem | awk '{print $2}'`
+        disk=`df -m / | grep / | awk '{print $2}'`
+        ssize=`perl -e "print (($mem > $disk / 2) ? $disk / 2 : $mem);"`
+        dd if=/dev/zero of=/swapfile bs=1M count=$ssize
+        chmod 600 /swapfile
+        mkswap /swapfile
+        echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+        swapon -a
+      PropagateTagsToVolumeOnCreation: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Instance"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Route1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTableId1
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref Instance
+  Route2:
+    Type: AWS::EC2::Route
+    Condition: HasRoute2
+    Properties:
+      RouteTableId: !Ref RouteTableId2
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref Instance
+  Route3:
+    Type: AWS::EC2::Route
+    Condition: HasRoute3
+    Properties:
+      RouteTableId: !Ref RouteTableId3
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref Instance
