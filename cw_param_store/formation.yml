@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudWatch parameter store
+Resources:
+  Parameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: "{}"
+      DataType: text
+      Description: !Sub "${AWS::StackName} parameter"
+      Tier: Standard
+      Tags:
+        Name: !Sub "${AWS::StackName}-Parameter"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
