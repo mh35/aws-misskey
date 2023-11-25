@@ -33,7 +33,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-Role"
+          Value: !Sub "${AWS::StackName}-Topic"
         - Key: CostTag
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
