@@ -175,9 +175,9 @@ Resources:
                 action: S3Download
                 onFailure: Abort
                 inputs:
-                  source: s3://${UploadBucket}/meilisearch/meilisearch.service
-                  destination: /etc/systemd/system/meilisearch.service
-                  expectedBucketOwner: ${AWS::AccountId}
+                  - source: s3://${UploadBucket}/meilisearch/meilisearch.service
+                    destination: /etc/systemd/system/meilisearch.service
+                    expectedBucketOwner: ${AWS::AccountId}
               - name: EnableService
                 action: ExecuteBash
                 onFailure: Abort
@@ -194,9 +194,9 @@ Resources:
                 action: S3Download
                 onFailure: Abort
                 inputs:
-                  source: s3://${UploadBucket}/meilisearch/proxy.conf
-                  destination: /etc/nginx/default.d/proxy.conf
-                  expectedBucketOwner: ${AWS::AccountId}
+                  - source: s3://${UploadBucket}/meilisearch/proxy.conf
+                    destination: /etc/nginx/default.d/proxy.conf
+                    expectedBucketOwner: ${AWS::AccountId}
               - name: EnableNginx
                 action: ExecuteBash
                 onFailure: Abort
