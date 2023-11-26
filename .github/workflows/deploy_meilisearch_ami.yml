@@ -1,0 +1,43 @@
+on:
+  workflow_dispatch: {}
+name: Meilisearch AMI deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: meilisearch_ami
+    name: Deploy Meilisearch AMI
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v4
+      - id: login
+        name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ vars.REGION_NAME }}
+      - id: upload_service
+        name: Upload service file
+        run: aws s3 cp meilisearch_ami/meilisearch.service s3://${{ secrets.SOURCE_BUCKET }}/meilisearch/meilisearch.service
+      - id: upload_proxy_conf
+        name: Upload Nginx proxy config
+        run: aws s3 cp meilisearch_ami/proxy.conf s3://${{ secrets.SOURCE_BUCKET }}/meilisearch/proxy.conf
+      - id: deploy
+        name: Deploy stack
+        run: >-
+          aws cloudformation deploy --template-file
+          budget/formation.yml --stack-name ${{ secrets.STACK_NAME }}
+          --role-arn ${{ secrets.CLOUDFORMATION_ROLE }}
+          --capabilities CAPABILITY_IAM
+          --no-fail-on-empty-changeset
+          --tags Name=${{ secrets.STACK_NAME }}
+          CostTag=${{ secrets.STACK_NAME }}
+          AppManagerCFNStackKey=${{ secrets.STACK_NAME }}
+          --parameter-overrides
+          SubnetId=${{ secrets.SUBNET_ID }}
+          SecurityGroupIds=${{ secrets.SECURITY_GROUP_ID }}
+          InstallCloudWatchAgentComponent=${{ secrets.CLOUDWATCH_AGENT_COMP }}
+          UploadBucket=${{ secrets.SOURCE_BUCKET }}
