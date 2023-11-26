@@ -1,0 +1,264 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Meilisearch AMI builder
+Parameters:
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet ID
+  SecurityGroupIds:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: Security group IDs
+  InstallCloudWatchAgentComponent:
+    Type: String
+    Description: Install CloudWatch Agent component ARN
+  UploadBucket:
+    Type: String
+    Description: Upload bucket name
+Resources:
+  BuildLogBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: RetainExceptOnCreate
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 7
+            Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-BuildLogBucket"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Topic"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: ec2.amazonaws.com
+      Path: !Sub "/${AWS::StackName}/"
+      Description: EC2 SSM and CloudWatch role
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/EC2InstanceProfileForImageBuilder"
+      Policies:
+        - PolicyName: AccessSSMParameters
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:PutParameter
+                Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
+        - PolicyName: AccessBuildLogBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub "${BuildLogBucket.Arn}/*"
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt BuildLogBucket.Arn
+        - PolicyName: ReadSourceBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Sub "arn:${AWS::Partition}:s3:::${UploadBucket}"
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "arn:${AWS::Partition}:s3:::${UploadBucket}/*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Role"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref Role
+      Path: !Sub "/${AWS::StackName}/"
+  InfrastructureConfig:
+    Type: AWS::ImageBuilder::InfrastructureConfiguration
+    Properties:
+      Description: !Sub "${AWS::StackName} infrastructure"
+      InstanceProfileName: !Ref InstanceProfile
+      InstanceTypes:
+        - t4g.nano
+      Logging:
+        S3Logs:
+          S3BucketName: !Ref BuildLogBucket
+      Name: !Sub "${AWS::StackName}-InfraConfig"
+      ResourceTags:
+        CostTag: !Ref AWS::StackName
+      SecurityGroupIds: !Ref SecurityGroupIds
+      SnsTopicArn: !Ref Topic
+      SubnetId: !Ref SubnetId
+      TerminateInstanceOnFailure: true
+      Tags:
+        Name: !Sub "${AWS::StackName}-InfrastructureConfig"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
+  SetupMeilisearchComponent:
+    Type: AWS::ImageBuilder::Component
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub "${AWS::StackName}-SetupMeilisearch"
+      Description: Setup NAT
+      ChangeDescription: Save routing table
+      Platform: Linux
+      Version: "1.0.0"
+      Data: !Sub |
+        schemaVersion: 1.0
+        phases:
+          - name: build
+            steps:
+              - name: SetupMeilisearch
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - curl -L https://install.meilisearch.com | sh
+                    - chmod +x meilisearch
+                    - mv ./meilisearch /usr/local/bin/
+                    - useradd -d /var/lib/meilisearch -s /sbin/nologin -r meilisearch
+                    - curl https://raw.githubusercontent.com/meilisearch/meilisearch/latest/config.toml > /etc/meilisearch.toml
+                    - >-
+                      sed -i -E 's/^env = "[^"]+"$/env = "production"/'
+                      /etc/meilisearch.toml
+                    - >-
+                      sed -i -E 's|^db_path = "[^"]+"$|db_path = "/var/lib/meilisearch/data"|'
+                      /etc/meilisearch.toml
+                    - >-
+                      sed -i -E 's|^dump_dir = "[^"]+"$|dump_dir = "/var/lib/meilisearch/dumps"|'
+                      /etc/meilisearch.toml
+                    - >-
+                      sed -i -E 's|^snapshot_dir = "[^"]+"$|snapshot_dir = "/var/lib/meilisearch/snapshots"|'
+                      /etc/meilisearch.toml
+                    - master_key=`uuidgen`
+                    - >-
+                      sed -i -E "s/YOUR_MASTER_KEY_VALUE/$master_key/"
+                      /etc/meilisearch.toml
+                    - sed -i -E "s/^# master_key =/master_key =/" /etc/meilisearch.toml
+                    - mkdir -p /var/lib/meilisearch/data /var/lib/meilisearch/dumps /var/lib/meilisearch/snapshots
+                    - chown -R meilisearch:meilisearch /var/lib/meilisearch
+                    - chmod 750 /var/lib/meilisearch
+              - name: CopyServiceFile
+                action: S3Download
+                onFailure: Abort
+                inputs:
+                  source: s3://${UploadBucket}/meilisearch/meilisearch.service
+                  destination: /etc/systemd/system/meilisearch.service
+                  expectedBucketOwner: ${AWS::AccountId}
+              - name: EnableService
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - systemctl enable meilisearch.service
+              - name: InstallNginx
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - yum install -y nginx
+              - name: InstallProxyConfig
+                action: S3Download
+                onFailure: Abort
+                inputs:
+                  source: s3://${UploadBucket}/meilisearch/proxy.conf
+                  destination: /etc/nginx/default.d/proxy.conf
+                  expectedBucketOwner: ${AWS::AccountId}
+              - name: EnableNginx
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - systemctl enable nginx.service
+      Tags:
+        Name: !Sub "${AWS::StackName}-SetupMeilisearchComponent"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
+  Recipe:
+    Type: AWS::ImageBuilder::ImageRecipe
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Meilisearch instance image recipe
+      Components:
+        - ComponentArn: !Sub "arn:${AWS::Partition}:imagebuilder:${AWS::Region}:aws:component/update-linux/1.0.2/1"
+        - ComponentArn: !Sub "arn:${AWS::Partition}:imagebuilder:${AWS::Region}:aws:component/reboot-linux/1.0.1/1"
+        - ComponentArn: !Ref InstallCloudWatchAgentComponent
+        - ComponentArn: !Ref SetupMeilisearchComponent
+      Name: !Sub "${AWS::StackName}-Recipe"
+      ParentImage: !Sub "arn:${AWS::Partition}:imagebuilder:${AWS::Region}:aws:image/amazon-linux-2023-arm64/x.x.x"
+      Version: "1.0.0"
+      Tags:
+        Name: !Sub "${AWS::StackName}-Recipe"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
+  RecipeLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/imagebuilder/${AWS::StackName}-Recipe"
+      RetentionInDays: 7
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-RecipeLogGroup"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  DistConfig:
+    Type: AWS::ImageBuilder::DistributionConfiguration
+    Properties:
+      Distributions:
+        - Region: !Ref AWS::Region
+          AmiDistributionConfiguration:
+            AmiTags:
+              CostTag: !Ref AWS::StackName
+      Name: !Sub "${AWS::StackName}-DistConfig"
+      Description: !Sub "${AWS::StackName} distribution config"
+      Tags:
+        Name: !Sub "${AWS::StackName}-DistConfig"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
+  Pipeline:
+    Type: AWS::ImageBuilder::ImagePipeline
+    Properties:
+      DistributionConfigurationArn: !Ref DistConfig
+      InfrastructureConfigurationArn: !Ref InfrastructureConfig
+      ImageRecipeArn: !Ref Recipe
+      Name: !Sub "${AWS::StackName}-Pipeline"
+      Status: ENABLED
+      Tags:
+        Name: !Sub "${AWS::StackName}-Pipeline"
+        CostTag: !Ref AWS::StackName
+        AppManagerCFNStackKey: !Ref AWS::StackName
