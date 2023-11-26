@@ -29,7 +29,7 @@ jobs:
         name: Deploy stack
         run: >-
           aws cloudformation deploy --template-file
-          budget/formation.yml --stack-name ${{ secrets.STACK_NAME }}
+          meilisearch_ami/formation.yml --stack-name ${{ secrets.STACK_NAME }}
           --role-arn ${{ secrets.CLOUDFORMATION_ROLE }}
           --capabilities CAPABILITY_IAM
           --no-fail-on-empty-changeset
