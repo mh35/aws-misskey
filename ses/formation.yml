@@ -7,6 +7,26 @@ Parameters:
   ZoneId:
     Type: AWS::Route53::HostedZone::Id
     Description: Route 53 zone ID
+  EnableDmarcRecord:
+    Type: String
+    Description: Whether to enable DMARC record or not
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "true"
+  DmarcPolicy:
+    Type: String
+    Description: DMARC policy
+    AllowedValues:
+      - "none"
+      - "quarantine"
+      - "reject"
+    Default: quarantine
+Conditions:
+  IsDmarcEnabled:
+    Fn::Equals:
+      - !Ref EnableDmarcRecord
+      - "true"
 Resources:
   Topic:
     Type: AWS::SNS::Topic
@@ -48,6 +68,9 @@ Resources:
         NextSigningKeyLength: RSA_2048_BIT
       ConfigurationSetAttributes:
         ConfigurationSetName: !Ref DefaultConfigSet
+      MailFromAttributes:
+        BehaviorOnMxFailure: USE_DEFAULT_VALUE
+        MailFromDomain: !Sub "ses-${AWS::Region}.${DomainName}"
   DkimRecords:
     Type: AWS::Route53::RecordSetGroup
     Properties:
@@ -69,3 +92,31 @@ Resources:
           TTL: "900"
           ResourceRecords:
             - !GetAtt Identity.DkimDNSTokenValue3
+  SpfRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Comment: SPF record
+      Name: !Sub "ses-${AWS::Region}.${DomainName}"
+      Type: TXT
+      TTL: "900"
+      ResourceRecords:
+        - '"v=spf1 include:amazonses.com ~all"'
+  MxRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Comment: MX record
+      Name: !Sub "ses-${AWS::Region}.${DomainName}"
+      Type: MX
+      TTL: "900"
+      ResourceRecords:
+        - !Sub "10 feedback-smtp.${AWS::Region}.amazonses.com"
+  DmarcRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: IsDmarcEnabled
+    Properties:
+      Comment: DMARC record
+      Name: !Sub "_dmarc.${DomainName}"
+      Type: TXT
+      TTL: "900"
+      ResourceRecords:
+        - !Sub '"v=DMARC1;p=${DmarcPolicy}"'
