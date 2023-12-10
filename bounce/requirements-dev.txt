@@ -1,0 +1,16 @@
+pylint
+pycodestyle
+pydocstyle
+mypy
+flake8
+flake8-annotations
+flake8-builtins
+flake8-comprehensions
+flake8-docstrings
+flake8-isort
+pep8-naming
+bandit
+black
+isort
+boto3-stubs[essential]
+aws-lambda-powertools[aws-sdk]

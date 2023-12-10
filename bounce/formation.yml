@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Misskey bounce handler
+Parameters:
+  Topic:
+    Type: String
+    Description: Topic ARN
+  PowertoolsLayer:
+    Type: String
+    Description: Powertools layer ARN
+    Default: arn:aws:lambda:ap-northeast-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:52
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        - AttributeName: category
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: ttl
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Table"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  ReadWriteTablePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: !Sub "Read and write ${AWS::StackName} bounce table"
+      Path: !Sub "/${AWS::StackName}/"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:ConditionCheckItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:UpdateItem
+            Resource: !GetAtt Table.Arn
+  FuncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+      Path: !Sub "/${AWS::StackName}/"
+      Description: !Sub "${AWS::StackName} bounce handler role"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        - !Ref ReadWriteTablePolicy
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-FuncRole"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  FuncLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-FuncLogGroup"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Func:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: ./bounce_handler
+      Role: !GetAtt FuncRole.Arn
+      Architectures:
+        - x86_64
+      Description: !Sub "${AWS::StackName} bounce handler"
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Table
+      Handler: index.handler
+      Layers:
+        - !Ref PowertoolsLayer
+      LoggingConfig:
+        LogGroup: !Ref FuncLogGroup
+      MemorySize: 256
+      Runtime: python3.11
+      Timeout: 900
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Func"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Subscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref Topic
+      Endpoint: !GetAtt Func.Arn
+  FuncPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Func
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref Topic
+Outputs:
+  TableName:
+    Value: !Ref Table
+    Description: Table name
+  AccessTablePolicy:
+    Value: !Ref ReadWriteTablePolicy
+    Description: Access table policy
