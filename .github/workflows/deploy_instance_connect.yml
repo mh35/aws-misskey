@@ -23,7 +23,8 @@ jobs:
         name: Deploy stack
         run: >-
           aws cloudformation deploy --template-file
-          budget/formation.yml --stack-name ${{ secrets.STACK_NAME }}
+          instance_connect/formation.yml
+          --stack-name ${{ secrets.STACK_NAME }}
           --role-arn ${{ secrets.CLOUDFORMATION_ROLE }}
           --no-fail-on-empty-changeset
           --tags Name=${{ secrets.STACK_NAME }}
