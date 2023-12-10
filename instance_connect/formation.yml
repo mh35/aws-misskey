@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: EC2 instance connect endpoints
+Parameters:
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet ID
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID
+Resources:
+  EndpointSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 instance connect endpoint security group
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EndpointSecGroup"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  TargetSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 instance connect target security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref EndpointSecGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-EndpointSecGroup"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  Endpoint:
+    Type: AWS::EC2::InstanceConnectEndpoint
+    Properties:
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref EndpointSecGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Endpoint"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
