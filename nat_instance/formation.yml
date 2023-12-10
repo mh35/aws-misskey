@@ -173,6 +173,7 @@ Resources:
           echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
           swapon -a
       PropagateTagsToVolumeOnCreation: true
+      SourceDestCheck: false
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-Instance"
