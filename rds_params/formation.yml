@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Misskey RDS params and options
+Resources:
+  ParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: !Sub "${AWS::StackName} parameter group"
+      Family: postgres15
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Topic"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
+  OptionsGroup:
+    Type: AWS::RDS::OptionGroup
+    Properties:
+      EngineName: postgres
+      MajorEngineVersion: "15"
+      OptionGroupDescription: !Sub "${AWS::StackName} options group"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Topic"
+        - Key: CostTag
+          Value: !Ref AWS::StackName
+        - Key: AppManagerCFNStackKey
+          Value: !Ref AWS::StackName
