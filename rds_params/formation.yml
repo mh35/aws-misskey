@@ -15,7 +15,7 @@ Resources:
         timezone: !Ref Timezone
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-Topic"
+          Value: !Sub "${AWS::StackName}-ParameterGroup"
         - Key: CostTag
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
@@ -28,7 +28,7 @@ Resources:
       OptionGroupDescription: !Sub "${AWS::StackName} options group"
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-Topic"
+          Value: !Sub "${AWS::StackName}-OptionsGroup"
         - Key: CostTag
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
