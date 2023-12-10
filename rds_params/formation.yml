@@ -1,11 +1,18 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Misskey RDS params and options
+Parameters:
+  Timezone:
+    Type: String
+    Description: Timezone
+    Default: UTC
 Resources:
   ParameterGroup:
     Type: AWS::RDS::DBParameterGroup
     Properties:
       Description: !Sub "${AWS::StackName} parameter group"
       Family: postgres15
+      Parameters:
+        timezone: !Ref Timezone
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-Topic"
