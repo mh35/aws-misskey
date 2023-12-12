@@ -1,6 +1,6 @@
 on:
   workflow_dispatch: {}
-name: Budget RDS parameters
+name: RDS parameters deploy
 jobs:
   deploy:
     runs-on: ubuntu-latest
