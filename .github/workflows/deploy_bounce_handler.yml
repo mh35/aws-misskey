@@ -1,0 +1,42 @@
+on:
+  workflow_dispatch: {}
+name: Bounce handler deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: bounce
+    name: Deploy bounce handler
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v4
+      - id: login
+        name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ vars.REGION_NAME }}
+      - id: package
+        name: Package
+        run: >-
+          aws cloudformation package --template-file
+          bounce/formation.yml
+          --s3-bucket ${{ secrets.SOURCE_BUCKET }}
+          --s3-prefix bounce --output-template-file
+          bounce/deploy.yml
+      - id: deploy
+        name: Deploy
+        run: >-
+          aws cloudformation deploy --template-file
+          bounce/deploy.yml --stack-name
+          ${{ secrets.STACK_NAME }} --capabilities CAPABILITY_IAM
+          --role-arn ${{ secrets.CLOUDFORMATION_ROLE }}
+          --no-fail-on-empty-changeset
+          --tags Name=${{ secrets.STACK_NAME }}
+          CostTag=${{ secrets.STACK_NAME }}
+          AppManagerCFNStackKey=${{ secrets.STACK_NAME }}
+          --parameter-overrides
+          Topic=${{ secrets.TOPIC_ARN }}
