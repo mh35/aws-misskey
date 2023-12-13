@@ -64,6 +64,9 @@ Parameters:
       - "true"
       - "false"
     Default: "false"
+  ApplicationTag:
+    Type: String
+    Description: Application tag
 Mappings:
   RegionMap:
     us-east-1:
@@ -147,6 +150,10 @@ Metadata:
           - CreateCloudWatchLogsEndpoint
           - CreateEcrDockerEndpoint
           - CreateEcrApiEndpoint
+      - Label:
+          default: Application settings
+        Parameters:
+          - ApplicationTag
 Resources:
   # VPC definition
   Vpc:
@@ -162,6 +169,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   VpcIpv6Cidr:
     Type: AWS::EC2::VPCCidrBlock
     Properties:
@@ -178,6 +187,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -221,6 +232,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Public
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     DependsOn: VpcIpv6Cidr
@@ -253,6 +266,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Private
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     DependsOn: VpcIpv6Cidr
@@ -285,6 +300,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Public
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     DependsOn: VpcIpv6Cidr
@@ -317,6 +334,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Private
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PublicSubnet3:
     Type: AWS::EC2::Subnet
     DependsOn: VpcIpv6Cidr
@@ -349,6 +368,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Public
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet3:
     Type: AWS::EC2::Subnet
     DependsOn: VpcIpv6Cidr
@@ -381,6 +402,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Private
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   # Route tables and NAT Gateways definition
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -395,6 +418,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Public
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PublicRouteIpv4:
     Type: AWS::EC2::Route
     Properties:
@@ -436,6 +461,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Private
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet1RouteIpv6:
     Type: AWS::EC2::Route
     Properties:
@@ -454,6 +481,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet1NatGateway:
     Type: AWS::EC2::NatGateway
     Condition: HasNATGateway
@@ -467,6 +496,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet1RouteIpv4:
     Type: AWS::EC2::Route
     Condition: HasNATGateway
@@ -492,6 +523,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Private
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet2RouteIpv6:
     Type: AWS::EC2::Route
     Properties:
@@ -510,6 +543,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet2NatGateway:
     Type: AWS::EC2::NatGateway
     Condition: HasEacnAZNatGateway
@@ -523,6 +558,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet2RouteIpv4:
     Type: AWS::EC2::Route
     Condition: HasNATGateway
@@ -551,6 +588,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: SubnetType
           Value: Private
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet3RouteIpv6:
     Type: AWS::EC2::Route
     Properties:
@@ -569,6 +608,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet3NatGateway:
     Type: AWS::EC2::NatGateway
     Condition: HasEacnAZNatGateway
@@ -582,6 +623,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   PrivateSubnet3RouteIpv4:
     Type: AWS::EC2::Route
     Condition: HasNATGateway
@@ -619,6 +662,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   MisskeyContainerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -637,6 +682,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   RdsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -655,6 +702,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   ElasticacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -673,6 +722,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   MeilisearchSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -696,6 +747,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   EfsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -714,6 +767,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   VpcEndpointSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -732,6 +787,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   # VPC endpoints definition
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
