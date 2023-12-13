@@ -29,5 +29,6 @@ jobs:
           --tags Name=${{ secrets.STACK_NAME }}
           CostTag=${{ secrets.STACK_NAME }}
           AppManagerCFNStackKey=${{ secrets.STACK_NAME }}
+          awsApplication=${{ secrets.APPLICATION_TAG }}
           --parameter-overrides
           AlarmTargetEmail=${{ secrets.TARGET_EMAIL }}
