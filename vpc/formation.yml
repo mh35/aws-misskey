@@ -67,6 +67,9 @@ Parameters:
   ApplicationTag:
     Type: String
     Description: Application tag
+  ApplicationId:
+    Type: String
+    Description: Application ARN
 Mappings:
   RegionMap:
     us-east-1:
@@ -154,7 +157,15 @@ Metadata:
           default: Application settings
         Parameters:
           - ApplicationTag
+          - ApplicationId
 Resources:
+  # Application relationship definition
+  AppAssoc:
+    Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
+    Properties:
+      Application: !Ref ApplicationId
+      Resource: !Ref AWS::StackId
+      ResourceType: CFN_STACK
   # VPC definition
   Vpc:
     Type: AWS::EC2::VPC
