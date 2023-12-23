@@ -32,3 +32,4 @@ jobs:
           awsApplication=${{ secrets.APPLICATION_TAG }}
           --parameter-overrides
           ApplicationTag=${{ secrets.APPLICATION_TAG }}
+          ApplicationId=${{ secrets.APPLICATION_ID }}
