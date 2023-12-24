@@ -30,3 +30,6 @@ jobs:
           --tags Name=${{ secrets.STACK_NAME }}
           CostTag=${{ secrets.STACK_NAME }}
           AppManagerCFNStackKey=${{ secrets.STACK_NAME }}
+          --parameter-overrides
+          ApplicationTag=${{ secrets.APPLICATION_TAG }}
+          ApplicationId=${{ secrets.APPLICATION_ID }}

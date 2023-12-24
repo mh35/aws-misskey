@@ -1,6 +1,19 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: EC2 AWS role
+Parameters:
+  ApplicationTag:
+    Type: String
+    Description: Application tag
+  ApplicationId:
+    Type: String
+    Description: Application ARN
 Resources:
+  AppAssoc:
+    Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
+    Properties:
+      Application: !Ref ApplicationId
+      Resource: !Ref AWS::StackId
+      ResourceType: CFN_STACK
   Role:
     Type: AWS::IAM::Role
     Properties:
@@ -34,6 +47,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
