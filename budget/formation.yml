@@ -8,7 +8,16 @@ Parameters:
   AlarmTargetEmail:
     Type: String
     Description: Budget alarm target Email
+  ApplicationId:
+    Type: String
+    Description: Application ARN
 Resources:
+  AppAssoc:
+    Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
+    Properties:
+      Application: !Ref ApplicationId
+      Resource: !Ref AWS::StackId
+      ResourceType: CFN_STACK
   Budget:
     Type: AWS::Budgets::Budget
     Properties:

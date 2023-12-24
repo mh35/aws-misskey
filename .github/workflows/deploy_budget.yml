@@ -32,3 +32,4 @@ jobs:
           awsApplication=${{ secrets.APPLICATION_TAG }}
           --parameter-overrides
           AlarmTargetEmail=${{ secrets.TARGET_EMAIL }}
+          ApplicationId=${{ secrets.APPLICATION_ID }}
