@@ -32,3 +32,5 @@ jobs:
           --parameter-overrides
           DomainName=${{ vars.DOMAIN_NAME }}
           ZoneId=${{ secrets.ZONE_ID }}
+          ApplicationTag=${{ secrets.APPLICATION_TAG }}
+          ApplicationId=${{ secrets.APPLICATION_ID }}

@@ -22,12 +22,24 @@ Parameters:
       - "quarantine"
       - "reject"
     Default: quarantine
+  ApplicationTag:
+    Type: String
+    Description: Application tag
+  ApplicationId:
+    Type: String
+    Description: Application ARN
 Conditions:
   IsDmarcEnabled:
     Fn::Equals:
       - !Ref EnableDmarcRecord
       - "true"
 Resources:
+  AppAssoc:
+    Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
+    Properties:
+      Application: !Ref ApplicationId
+      Resource: !Ref AWS::StackId
+      ResourceType: CFN_STACK
   Topic:
     Type: AWS::SNS::Topic
     Properties:
@@ -39,6 +51,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   DefaultConfigSet:
     Type: AWS::SES::ConfigurationSet
     Properties:
