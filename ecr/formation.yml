@@ -1,6 +1,19 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: ECR
+Parameters:
+  ApplicationTag:
+    Type: String
+    Description: Application tag
+  ApplicationId:
+    Type: String
+    Description: Application ARN
 Resources:
+  AppAssoc:
+    Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
+    Properties:
+      Application: !Ref ApplicationId
+      Resource: !Ref AWS::StackId
+      ResourceType: CFN_STACK
   Repository:
     Type: AWS::ECR::Repository
     Properties:
@@ -30,3 +43,5 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
