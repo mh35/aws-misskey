@@ -7,7 +7,19 @@ Parameters:
   SecurityGroupIds:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: Security group IDs
+  ApplicationTag:
+    Type: String
+    Description: Application tag
+  ApplicationId:
+    Type: String
+    Description: Application ARN
 Resources:
+  AppAssoc:
+    Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
+    Properties:
+      Application: !Ref ApplicationId
+      Resource: !Ref AWS::StackId
+      ResourceType: CFN_STACK
   BuildLogBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: RetainExceptOnCreate
@@ -28,6 +40,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   Topic:
     Type: AWS::SNS::Topic
     Properties:
@@ -38,6 +52,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   Role:
     Type: AWS::IAM::Role
     Properties:
@@ -84,6 +100,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -111,6 +129,7 @@ Resources:
         Name: !Sub "${AWS::StackName}-InfrastructureConfig"
         CostTag: !Ref AWS::StackName
         AppManagerCFNStackKey: !Ref AWS::StackName
+        awsApplication: !Ref ApplicationTag
   InstallCloudWatchAgentComponent:
     Type: AWS::ImageBuilder::Component
     UpdateReplacePolicy: Retain
@@ -136,6 +155,7 @@ Resources:
         Name: !Sub "${AWS::StackName}-InstallCloudWatchAgentComponent"
         CostTag: !Ref AWS::StackName
         AppManagerCFNStackKey: !Ref AWS::StackName
+        awsApplication: !Ref ApplicationTag
   SetupNatComponent:
     Type: AWS::ImageBuilder::Component
     UpdateReplacePolicy: Retain
@@ -168,6 +188,7 @@ Resources:
         Name: !Sub "${AWS::StackName}-SetupNatComponent"
         CostTag: !Ref AWS::StackName
         AppManagerCFNStackKey: !Ref AWS::StackName
+        awsApplication: !Ref ApplicationTag
   Recipe:
     Type: AWS::ImageBuilder::ImageRecipe
     UpdateReplacePolicy: Retain
@@ -185,6 +206,7 @@ Resources:
         Name: !Sub "${AWS::StackName}-Recipe"
         CostTag: !Ref AWS::StackName
         AppManagerCFNStackKey: !Ref AWS::StackName
+        awsApplication: !Ref ApplicationTag
   RecipeLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -197,6 +219,8 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: AppManagerCFNStackKey
           Value: !Ref AWS::StackName
+        - Key: awsApplication
+          Value: !Ref ApplicationTag
   DistConfig:
     Type: AWS::ImageBuilder::DistributionConfiguration
     Properties:
@@ -211,6 +235,7 @@ Resources:
         Name: !Sub "${AWS::StackName}-DistConfig"
         CostTag: !Ref AWS::StackName
         AppManagerCFNStackKey: !Ref AWS::StackName
+        awsApplication: !Ref ApplicationTag
   Pipeline:
     Type: AWS::ImageBuilder::ImagePipeline
     Properties:
@@ -223,3 +248,4 @@ Resources:
         Name: !Sub "${AWS::StackName}-Pipeline"
         CostTag: !Ref AWS::StackName
         AppManagerCFNStackKey: !Ref AWS::StackName
+        awsApplication: !Ref ApplicationTag

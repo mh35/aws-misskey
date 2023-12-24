@@ -34,3 +34,5 @@ jobs:
           --parameter-overrides
           SubnetId=${{ secrets.SUBNET_ID }}
           SecurityGroupIds=${{ secrets.SECURITY_GROUP_ID }}
+          ApplicationTag=${{ secrets.APPLICATION_TAG }}
+          ApplicationId=${{ secrets.APPLICATION_ID }}
