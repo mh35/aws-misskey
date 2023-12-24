@@ -136,7 +136,7 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-InstallCloudWatchAgent"
       Platform: Linux
-      Version: "1.0.0"
+      Version: "1.0.1"
       SupportedOsVersions:
         - Amazon Linux 2023
       Description: Install Amazon CloudWatch Agent for Amazon Linux 2023
@@ -164,7 +164,7 @@ Resources:
       Description: Setup NAT
       ChangeDescription: Save routing table
       Platform: Linux
-      Version: "1.0.2"
+      Version: "1.0.3"
       Data: |
         schemaVersion: 1.0
         phases:
@@ -201,7 +201,7 @@ Resources:
         - ComponentArn: !Ref SetupNatComponent
       Name: !Sub "${AWS::StackName}-Recipe"
       ParentImage: !Sub "arn:${AWS::Partition}:imagebuilder:${AWS::Region}:aws:image/amazon-linux-2023-arm64/x.x.x"
-      Version: "1.0.2"
+      Version: "1.0.3"
       Tags:
         Name: !Sub "${AWS::StackName}-Recipe"
         CostTag: !Ref AWS::StackName
