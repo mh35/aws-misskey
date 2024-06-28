@@ -22,6 +22,10 @@ Parameters:
       - "quarantine"
       - "reject"
     Default: quarantine
+  DmarcReportAddr:
+    Type: String
+    Description: DMARC report receiver email address
+    Default: ''
   ApplicationTag:
     Type: String
     Description: Application tag
@@ -33,6 +37,11 @@ Conditions:
     Fn::Equals:
       - !Ref EnableDmarcRecord
       - "true"
+  HasDmarcReportDest:
+    Fn::Not:
+      - !Equals
+        - !Ref DmarcReportAddr
+        - ''
 Resources:
   AppAssoc:
     Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
@@ -136,4 +145,13 @@ Resources:
       Type: TXT
       TTL: "900"
       ResourceRecords:
-        - !Sub '"v=DMARC1;p=${DmarcPolicy}"'
+        - !Join
+          - ''
+          - - '"v=DMARC1'
+            - !Sub ';p=${DmarcPolicy}'
+            - !If
+              - HasDmarcReportDest
+              - !Sub ';rua=mailto:${DmarcReportAddr}'
+              - !Ref AWS::NoValue
+            - ';adkim=r;aspf=r;pct=100'
+            - '"'
